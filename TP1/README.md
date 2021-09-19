@@ -3,9 +3,12 @@
 ## 1. Affichage d'informations sur la pile TCP/IP locale
 
 ### En ligne de commande:
+
+Afficher les infos des cartes réseau: 
 ```
-Afficher les infos des cartes réseau: PS C:\Users\Mathis> ipconfig /all
+PS C:\Users\Mathis> ipconfig /all 
 ```
+
 infos cartes réseau:
 ```
 interface WIfi :
@@ -26,21 +29,31 @@ Gateway:
 
 ### En graphique (GUI : Graphical User Interface)
 ```
-taper "informations système" dans la barre de recherche Windows
+Aller dans :
+ Paramètres -> Réseau et Internet -> Wi-Fi (ou Ethernet en fonction de votre connectique) -> click sur le nom du réseau
+Les informations se trouvent en bas de la page.
+
+Autre possibilité : aller dans Informations système -> Composants -> réseau -> Carte
 ```
 
 #### résultat:
 
 ![](img\image_1.png)
 (capture d'écran raccourcie pour le TP)
-
-la gateway sert comme un pare-feu dans le réseau de Ynov.
-
+```
+Dans Ynov, la gateway sert comme un pont pour communiquer avec des réseaux extérieurs à Ynov.
+```
 ## 2. Modifications des informations
 
 ### A. Modification d'adresse IP (part 1)
 
+Pour accéder aux paramètres de modification de son adresse IP, suivre les étapes suivantes:
+```
+Paramètres -> Réseau et Internet -> Wi-Fi (ou Ethernet en fonction de votre connectique) -> click sur le nom du réseau -> vers le bas, clicker sur modifier puis passer en manuel.
+```
 ![](img\image_2.png)
+
+Vérification de la bonne modification de mon adresse IPv4 dans le terminal avec ipconfig:
 ```
 Carte réseau sans fil Wi-Fi :
 
@@ -57,11 +70,11 @@ Quelques secondes après la modification de l'IP, j'ai subi une perte de connexi
 
 afficher la table ARP avec la commande arp /a
 
-adresse mac de la passerelle résseau : 00-12-00-40-4c-bf
 ```
   Adresse Internet      Adresse physique      Type
   10.33.3.253           00-12-00-40-4c-bf     dynamique
 ```
+Ici, l'adresse mac de la passerelle résseau : 00-12-00-40-4c-bf
 L'adresse MAC de la passerelle réseau a été repérée grâce à l'adresse IP de l'interface réseau et de la passerelle.
 
 Ping vers d'autres machines du réseau
@@ -366,7 +379,16 @@ Durée approximative des boucles en millisecondes :
 
 ## 1. DHCP
 
-FAIRE LE TRUC DE YNOV FAIRE LE TRUC DE YNOV FAIRE LE TRUC DE YNOV FAIRE LE TRUC DE YNOV
+N'ayant pas vu qu'il fallait faire la manipulation dans les locaux de Ynov, je l'ai effectuée chez moi.
+
+```
+Carte réseau sans fil Wi-Fi :
+
+   DHCP activé. . . . . . . . . . . . . . : Oui
+   Bail obtenu. . . . . . . . . . . . . . : samedi 18 septembre 2021 16:38:59
+   Bail expirant. . . . . . . . . . . . . : dimanche 19 septembre 2021 16:38:59
+   Serveur DHCP . . . . . . . . . . . . . : 192.168.1.1
+```
 
 ## 2. DNS
 
@@ -435,3 +457,15 @@ Le premier site est hébergé par "homerun.telia.com"
 Le second est hébergé par "abo.wanadoo.fr"
 
 # IV. Wireshark
+
+Ping entre ma machine et la passerelle :
+
+![](./img/image_5.png)
+
+Netcat entre moi et mon mate :
+
+![](./img/image_6.png)
+
+Requête DNS vers les serveurs de Google :
+
+![](./img/image_7.png)
