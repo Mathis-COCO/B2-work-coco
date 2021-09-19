@@ -1,3 +1,5 @@
+# TP1 Réseau B2B COCO Mathis réalisé sur WINDOWS
+
 # I. Exploration locale en solo
 
 ## 1. Affichage d'informations sur la pile TCP/IP locale
@@ -9,7 +11,7 @@ Afficher les infos des cartes réseau:
 PS C:\Users\Mathis> ipconfig /all 
 ```
 
-infos cartes réseau:
+Informations des cartes réseau:
 ```
 interface WIfi :
    Description. . . . . . . . . . . . . . : Intel(R) Wi-Fi 6 AX201 160MHz
@@ -28,6 +30,8 @@ Gateway:
 ```
 
 ### En graphique (GUI : Graphical User Interface)
+
+Comment faire ?
 ```
 Aller dans :
  Paramètres -> Réseau et Internet -> Wi-Fi (ou Ethernet en fonction de votre connectique) -> click sur le nom du réseau
@@ -36,18 +40,19 @@ Les informations se trouvent en bas de la page.
 Autre possibilité : aller dans Informations système -> Composants -> réseau -> Carte
 ```
 
-#### résultat:
+Résultat:
 
 ![](img/image_1.png)
+
 (capture d'écran raccourcie pour le TP)
 ```
 Dans Ynov, la gateway sert comme un pont pour communiquer avec des réseaux extérieurs à Ynov.
 ```
 ## 2. Modifications des informations
 
-### A. Modification d'adresse IP (part 1)
+### A. Modification d'adresse IP
 
-Pour accéder aux paramètres de modification de son adresse IP, suivre les étapes suivantes:
+Pour accéder aux paramètres de modification de son adresse IP, suivre les étapes suivantes :
 ```
 Paramètres -> Réseau et Internet -> Wi-Fi (ou Ethernet en fonction de votre connectique) -> click sur le nom du réseau -> vers le bas, clicker sur modifier puis passer en manuel.
 ```
@@ -204,6 +209,8 @@ Durée approximative des boucles en millisecondes :
 
 ## 3. Modification d'adresse IP
 
+Pour cette partie du TP, mon adresse IP est modifiée en 192.168.1.1 et celle de Enzo est 192.168.1.2.
+
 ![](img/Image_4.png)
 
 ipconfig :
@@ -217,7 +224,7 @@ Carte Ethernet Ethernet 4 :
    Passerelle par défaut. . . . . . . . . : 192.168.1.2
 ```
 ```
-PS C:\WINDOWS\system32> ping 192.168.1.2
+PS C:\Users\Mathis> ping 192.168.1.2
 
 Envoi d’une requête 'Ping'  192.168.1.2 avec 32 octets de données :
 Réponse de 192.168.1.2 : octets=32 temps=1 ms TTL=128
@@ -231,7 +238,7 @@ Durée approximative des boucles en millisecondes :
     Minimum = 1ms, Maximum = 1ms, Moyenne = 1ms
 ```
 ```
-PS C:\WINDOWS\system32> arp /a
+PS C:\Users\Mathis> arp /a
 
 Interface : 192.168.1.1 --- 0x10
   Adresse Internet      Adresse physique      Type
@@ -322,6 +329,8 @@ avec un maximum de 30 sauts :
   1     1 ms     2 ms     1 ms  LAPTOP-V8G7251P [192.168.1.1]
   2     *        *
 ```
+
+## 5. Petit chat privé
 
 Depuis ma machine (côté serveur) avec netcat:
 ```
