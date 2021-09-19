@@ -31,7 +31,7 @@ taper "informations système" dans la barre de recherche Windows
 
 #### résultat:
 
-![](https://i.imgur.com/Jah7ogd.png)
+![](img\image_1.png)
 (capture d'écran raccourcie pour le TP)
 
 la gateway sert comme un pare-feu dans le réseau de Ynov.
@@ -40,7 +40,7 @@ la gateway sert comme un pare-feu dans le réseau de Ynov.
 
 ### A. Modification d'adresse IP (part 1)
 
-SCREEN SCREEN SCREEN SCREEN
+![](img\image_2.png)
 ```
 Carte réseau sans fil Wi-Fi :
 
@@ -170,7 +170,7 @@ Nmap scan report for 10.33.3.219
 ```
 Je peux donc utiliser les IP de 10.33.3.211 à 10.33.3.218 compris, dans mon cas, je vais prendre la 10.33.3.215
 
-GATEWAY : SCREEN 2 SCREEN 2 SCREEN 2 SCREEN 2 SCREEN 2 SCREEN 2
+![](img\image_3.png)
 
 ```
 PS C:\WINDOWS\system32> ping 8.8.8.8
@@ -191,6 +191,8 @@ Durée approximative des boucles en millisecondes :
 
 ## 3. Modification d'adresse IP
 
+![](img\image_4.png)
+
 ipconfig :
 ```
 Carte Ethernet Ethernet 4 :
@@ -199,9 +201,8 @@ Carte Ethernet Ethernet 4 :
    Adresse IPv6 de liaison locale. . . . .: fe80::20e3:4113:bd3c:92c2%16
    Adresse IPv4. . . . . . . . . . . . . .: 192.168.1.1
    Masque de sous-réseau. . . . . . . . . : 255.255.255.252
-   Passerelle par défaut. . . . . . . . . : 192.168.1.253
+   Passerelle par défaut. . . . . . . . . : 192.168.1.2
 ```
-
 ```
 PS C:\WINDOWS\system32> ping 192.168.1.2
 
