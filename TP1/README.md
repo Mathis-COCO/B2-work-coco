@@ -51,7 +51,7 @@ Pour accéder aux paramètres de modification de son adresse IP, suivre les éta
 ```
 Paramètres -> Réseau et Internet -> Wi-Fi (ou Ethernet en fonction de votre connectique) -> click sur le nom du réseau -> vers le bas, clicker sur modifier puis passer en manuel.
 ```
-![](img/image_2.png)
+![](img/Image_2.png)
 
 Vérification de la bonne modification de mon adresse IPv4 dans le terminal avec ipconfig:
 ```
@@ -183,7 +183,7 @@ Nmap scan report for 10.33.3.219
 ```
 Je peux donc utiliser les IP de 10.33.3.211 à 10.33.3.218 compris, dans mon cas, je vais prendre la 10.33.3.215
 
-![](img/image_3.png)
+![](img/Image_3.png)
 
 ```
 PS C:\WINDOWS\system32> ping 8.8.8.8
@@ -204,7 +204,7 @@ Durée approximative des boucles en millisecondes :
 
 ## 3. Modification d'adresse IP
 
-![](img/image_4.png)
+![](img/Image_4.png)
 
 ipconfig :
 ```
@@ -460,12 +460,12 @@ Le second est hébergé par "abo.wanadoo.fr"
 
 Ping entre ma machine et la passerelle :
 
-![](img/image_5.png)
+![](img/Image_5.png)
 
 Netcat entre moi et mon mate :
 
-![](img/image_6.png)
+![](img/Image_6.png)
 
 Requête DNS vers les serveurs de Google :
 
-![](img/image_7.png)
+![](img/Image_7.png)
