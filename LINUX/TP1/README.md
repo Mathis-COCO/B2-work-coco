@@ -259,3 +259,298 @@ mathis2 : mathis2 admins
 
 # 2. SSH
 
+J'ai essayé de faire la partie SSH sur les 2 machines et avec tous les utilisateurs mais ça n'a pas fonctionné malgré une clé fonctionnelle.
+
+# II. Partitionnement
+
+Pour cette partie j'ai eu un problème de VM qui fait que j'ai du la redémarrer et j'ai perdu mes output de commandes.
+
+```
+[mathis@node1 ~]$ lsblk
+NAME        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
+sda           8:0    0    8G  0 disk
+├─sda1        8:1    0    1G  0 part /boot
+└─sda2        8:2    0    7G  0 part
+  ├─rl-root 253:0    0  6.2G  0 lvm  /
+  └─rl-swap 253:1    0  820M  0 lvm  [SWAP]
+sdb           8:16   0    3G  0 disk
+sdc           8:32   0    3G  0 disk
+sr0          11:0    1 1024M  0 rom
+```
+```
+[mathis@node1 ~]$ sudo pvcreate /dev/sdb
+   Physical volume "/dev/sdb" successfully created.
+```
+```
+[mathis@node1 ~]$ sudo pvcreate /dev/sdc
+   Physical volume "/dev/sdc" successfully created.
+```
+```
+[mathis@node1 ~]$ sudo pvs
+[sudo] password for mathis:
+  PV         VG   Fmt  Attr PSize  PFree
+  /dev/sda2  rl   lvm2 a--  <7.00g       0
+  /dev/sdb   data lvm2 a--  <3.00g 1020.00m
+  /dev/sdc   data lvm2 a--  <3.00g   <2.00g
+```
+```
+[mathis@node1 ~]$ sudo vgcreate data /dev/sdb
+   Volume group "data" successfully created.
+```
+```
+[mathis@node1 ~]$ sudo vgextend data /dev/sdc
+   Volume group "data" successfully extended.
+```
+
+```
+[mathis@node1 ~]$ sudo lvcreate -L 1G data -n vol1
+   Logical volume "vol1" created.
+```
+```
+[mathis@node1 ~]$ sudo lvcreate -L 1G data -n vol2
+   Logical volume "vol2" created.
+```
+```
+[mathis@node1 ~]$ sudo lvcreate -L 1G data -n vol3
+   Logical volume "vol3" created.
+```
+
+```
+[mathis@node1 ~]$ sudo lvs
+  LV   VG   Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  vol1 data -wi-ao----   1.00g
+  vol2 data -wi-ao----   1.00g
+  vol3 data -wi-ao----   1.00g
+  root rl   -wi-ao----  <6.20g
+  swap rl   -wi-ao---- 820.00m
+```
+
+J'ai du reproduire la commande après le reboot donc l'output n'est pas le bon, j'avais eu une chose me donnant l' UUID du filesystem, les positions de stockage des "superblock" et l'avancement de la commande.
+```
+[mathis@node1 ~]$ sudo mkfs -t ext4 /dev/data/vol1
+mke2fs 1.45.6 (20-Mar-2020)
+/dev/data/vol1 contains a ext4 file system
+        last mounted on Mon Sep 27 00:03:58 2021
+```
+
+idem pour vol2 et vol3.
+
+```
+[mathis@node1 ~]$ sudo mkdir /mnt/part1
+[mathis@node1 ~]$ sudo mkdir /mnt/part2
+[mathis@node1 ~]$ sudo mkdir /mnt/part3
+```
+```
+[mathis@node1 ~]$ sudo mount /dev/data/vol1 /mnt/part1/
+[mathis@node1 ~]$ sudo mount /dev/data/vol2 /mnt/part2/
+[mathis@node1 ~]$ sudo mount /dev/data/vol3 /mnt/part3/
+```
+
+```
+[mathis@node1 ~]$ mount
+...
+...
+...
+/dev/mapper/data-vol1 on /mnt/part1 type ext4 (rw,relatime,seclabel)
+/dev/mapper/data-vol2 on /mnt/part2 type ext4 (rw,relatime,seclabel)
+/dev/mapper/data-vol3 on /mnt/part3 type ext4 (rw,relatime,seclabel)
+```
+
+```
+[mathis@node1 ~]$ sudo umount /mnt/part1
+[mathis@node1 ~]$ sudo umount /mnt/part2
+[mathis@node1 ~]$ sudo umount /mnt/part3
+[mathis@node1 ~]$ sudo mount -av
+/                        : ignored
+/boot                    : already mounted
+none                     : ignored
+mount: /mnt/part1 does not contain SELinux labels.
+       You just mounted an file system that supports labels which does not
+       contain labels, onto an SELinux box. It is likely that confined
+       applications will generate AVC messages and not be allowed access to
+       this file system.  For more details see restorecon(8) and mount(8).
+/mnt/part1               : successfully mounted
+mount: /mnt/part2 does not contain SELinux labels.
+       You just mounted an file system that supports labels which does not
+       contain labels, onto an SELinux box. It is likely that confined
+       applications will generate AVC messages and not be allowed access to
+       this file system.  For more details see restorecon(8) and mount(8).
+/mnt/part2               : successfully mounted
+mount: /mnt/part3 does not contain SELinux labels.
+       You just mounted an file system that supports labels which does not
+       contain labels, onto an SELinux box. It is likely that confined
+       applications will generate AVC messages and not be allowed access to
+       this file system.  For more details see restorecon(8) and mount(8).
+/mnt/part3               : successfully mounted
+```
+```
+[mathis@node1 ~]$ sudo nano /etc/fstab
+```
+```
+#
+# /etc/fstab
+# Created by anaconda on Wed Sep 15 13:25:12 2021
+#
+# Accessible filesystems, by reference, are maintained under '/dev/disk/'.
+# See man pages fstab(5), findfs(8), mount(8) and/or blkid(8) for more info.
+#
+# After editing this file, run 'systemctl daemon-reload' to update systemd
+# units generated from this file.
+#
+/dev/mapper/rl-root     /                       xfs     defaults        0 0
+UUID=5451d0c2-eaff-4a21-b495-9d74eef9c9da /boot                   xfs     defaults        0 0
+/dev/mapper/rl-swap     none                    swap    defaults        0 0
+/dev/data/vol1 /mnt/part1 ext4  defaults 0 0
+/dev/data/vol2 /mnt/part2 ext4  defaults 0 0
+/dev/data/vol3 /mnt/part3 ext4  defaults 0 0
+```
+
+# III. Gestion de services
+
+# 1. Intéraction avec un service existant
+
+Assurez-vous que:
+L'unité est active:
+```
+[mathis@node1 ~]$ sudo systemctl is-active firewalld
+active
+```
+L'unité est activée:
+```
+[mathis@node1 ~]$ sudo systemctl is-enabled firewalld
+enabled
+```
+
+# 2. Création de service
+
+## A. Unité simpliste
+
+```
+[mathis@node1 system]$ sudo nano web.service
+```
+
+Ajout du contenu demandé:
+
+```
+[Unit]
+Description=Very simple web service
+
+[Service]
+ExecStart=/bin/python3 -m http.server 8888
+
+[Install]
+WantedBy=multi-user.target
+```
+Ouverture du port 8888:
+```
+[mathis@node1 ~]$ sudo firewall-cmd --add-port=8888/tcp --permanent
+success
+```
+
+```
+[mathis@node1 ~]$ sudo systemctl daemon-reload
+[sudo] password for mathis:
+[mathis@node1 ~]$ sudo systemctl status web
+● web.service - Very simple web service
+   Loaded: loaded (/etc/systemd/system/web.service; disabled; vendor preset: disabled)
+   Active: inactive (dead)
+```
+On peut voir que le service est inactif, on va donc l'activer:
+```
+[mathis@node1 ~]$ sudo systemctl start web
+[mathis@node1 ~]$ sudo systemctl enable web
+Created symlink /etc/systemd/system/multi-user.target.wants/web.service → /etc/systemd/system/web.service.
+```
+
+Une fois ces commandes rentrées, on peut revérifier les status:
+
+```
+[mathis@node1 ~]$ sudo systemctl status web
+● web.service - Very simple web service
+   Loaded: loaded (/etc/systemd/system/web.service; enabled; vendor preset: disabled)
+   Active: active (running) since Mon 2021-09-27 01:25:18 CEST; 22s ago
+ Main PID: 1889 (python3)
+    Tasks: 1 (limit: 11385)
+   Memory: 10.3M
+   CGroup: /system.slice/web.service
+           └─1889 /bin/python3 -m http.server 8888
+
+Sep 27 01:25:18 node1.net1.tp2 systemd[1]: Started Very simple web service.
+```
+
+Cette fois-ci on peut constater que le service est bien actif.
+
+```
+[mathis@node1 ~]$ curl 10.101.1.11:8888
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Directory listing for /</title>
+</head>
+<body>
+<h1>Directory listing for /</h1>
+<hr>
+<ul>
+<li><a href="bin/">bin@</a></li>
+<li><a href="boot/">boot/</a></li>
+<li><a href="dev/">dev/</a></li>
+<li><a href="etc/">etc/</a></li>
+<li><a href="home/">home/</a></li>
+<li><a href="lib/">lib@</a></li>
+<li><a href="lib64/">lib64@</a></li>
+<li><a href="media/">media/</a></li>
+<li><a href="mnt/">mnt/</a></li>
+<li><a href="opt/">opt/</a></li>
+<li><a href="proc/">proc/</a></li>
+<li><a href="root/">root/</a></li>
+<li><a href="run/">run/</a></li>
+<li><a href="sbin/">sbin@</a></li>
+<li><a href="srv/">srv/</a></li>
+<li><a href="sys/">sys/</a></li>
+<li><a href="tmp/">tmp/</a></li>
+<li><a href="usr/">usr/</a></li>
+<li><a href="var/">var/</a></li>
+</ul>
+<hr>
+</body>
+</html>
+```
+
+Les services sont bien actifs et le serveur est lui fonctionnelk sur le port 8888 de node1.
+
+## B. Modification de l'unité
+
+Création de l'utilisateur web:
+
+`[mathis@node1 ~]$ sudo adduser web`
+
+Modification du fichier web.service:
+```
+[Unit]
+Description=Very simple web service
+
+[Service]
+ExecStart=/bin/python3 -m http.server 8888
+User=web
+WorkingDirectory=/srv
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```
+[mathis@node1 system]$ sudo mkdir srv
+```
+
+```
+[mathis@node1 srv]$ curl 10.101.1.11:8888
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+[...]
+<li><a href="srv/">srv/</a></li>
+[...]
+</body>
+</html>
+```
+
+notre serveur web fonctionne bien et on retrouve bien le dossier récemment créé dedans.
