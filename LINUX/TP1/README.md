@@ -261,6 +261,39 @@ mathis2 : mathis2 admins
 
 J'ai essayé de faire la partie SSH sur les 2 machines et avec tous les utilisateurs mais ça n'a pas fonctionné malgré une clé fonctionnelle.
 
+Génération de la clé sur mon poste personnel:
+```
+PS C:\Users\Mathis\B2_work_COCO\b2_work_coco> ssh-keygen -t rsa -b 4096 
+```
+Je sélectionne le fichier de base et y ajoute un mot de passe.
+```
+[mathis@node1 .ssh]$ sudo mkdir /home/mathis2/.ssh
+```
+Je peux retrouver ma clé publique dans:
+`C:\Users\Mathis\.ssh`
+
+Je créé un fichier authorized_keys
+```
+[mathis@node1 .ssh]$ sudo nano authorized_keys
+```
+J'y ajoute ma clé SSH publique:
+```
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCs07Fd/7FJ9nn6OUKw2bTQz/4I77LxZPv+xgyWGduJrmjzoMPMrIcrzG37kCRXv$
+```
+Mofidication des permissions:
+```
+[mathis@node1 .ssh]$ sudo chmod 600 authorized_keys
+```
+```
+[mathis@node1 ~]$ sudo chmod 700 .ssh/
+```
+
+Le problème est que l'on me demande toujours mon mot de passe lors de ma connection en SSH:
+```
+PS C:\Users\Mathis> ssh mathis@10.101.1.11
+mathis@10.101.1.11's password:
+```
+
 # II. Partitionnement
 
 Pour cette partie j'ai eu un problème de VM qui fait que j'ai du la redémarrer et j'ai perdu mes output de commandes.
