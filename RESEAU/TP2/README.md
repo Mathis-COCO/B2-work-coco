@@ -3,11 +3,12 @@
 ---
 
 # TP2 : On va router des trucs
-# 1 Echange ARP
+# I. ARP
+# 1. Echange ARP
 
- Générer des requêtes ARP
+## Générer des requêtes ARP
  
- ```
+```
  [mathis@node1 ~]$ ping 10.2.1.12
 PING 10.2.1.12 (10.2.1.12) 56(84) bytes of data.
 64 bytes from 10.2.1.12: icmp_seq=1 ttl=64 time=0.657 ms
@@ -18,7 +19,7 @@ PING 10.2.1.12 (10.2.1.12) 56(84) bytes of data.
 --- 10.2.1.12 ping statistics ---
 4 packets transmitted, 4 received, 0% packet loss, time 3063ms
 rtt min/avg/max/mdev = 0.591/0.667/0.735/0.052 ms
- ```
+```
  
  ```
  [mathis@node2 ~]$ ping 10.2.1.11
@@ -33,6 +34,7 @@ PING 10.2.1.11 (10.2.1.11) 56(84) bytes of data.
 rtt min/avg/max/mdev = 1.545/1.610/1.711/0.069 ms
  ```
  
+Observer les tables ARP des deux machines:
  ip n s sur node1:
  ```
 [mathis@node1 ~]$ ip n s
@@ -65,8 +67,6 @@ Suite à la commmande ip n s, on peut constater que l'adresse MAC de la carte r�
     inet6 fe80::a00:27ff:fe37:cd3/64 scope link noprefixroute
        valid_lft forever preferred_lft forever
 ```
-
-# PARTIE PRECEDENTE A REVERIFIER PARTIE PRECEDENTE A REVERIFIER
 
 # 2. Analyse de trames
 
@@ -124,6 +124,8 @@ rtt min/avg/max/mdev = 2.276/9.541/29.989/11.809 ms
 | 10    | Réponse ARP | `node2` `08:00:27:71:b4:d6` | `node1` `08:00:27:37:0c:d3`|
 
 # II. Routage
+
+## 1. Mise en place du routage
 
 Suite à la création de la nouvelle machine nommée marcel, je modifie le fichier config de enp0s8:
 
@@ -323,9 +325,12 @@ rtt min/avg/max/mdev = 0.746/1.363/2.123/0.324 ms
 |-------|-------------|-----------|------------------------------|----------------|-----------------------------|
 | 1     | Requête ARP | x         | `node1` `08:00:27:0a:50:bb`  | x              | Broadcast `FF:FF:FF:FF:FF`  |
 | 2     | Réponse ARP | x         | `router` `08:00:27:71:b4:d6` | x              | `node1` `08:00:27:0a:50:bb` |
-| ...   | ...         | ...       | ...                          |                |                             |
-| ?     | Ping        | ?         | `node1` `08:00:27:0a:50:bb`  | ?              | `router` `08:00:27:71:b4:d6`|
-| ?     | Pong        | ?         | `router` `08:00:27:71:b4:d6` | ?              | ?                           |
+| 3     | Ping        | 10.2.1.11 | `node1` `08:00:27:71:b4:d6`  | 10.2.2.12      | `router` `08:00:27:0a:50:bb`|
+| 4     | Requête ARP | x         | `marcel` `08:00:27:83:69:12` | x              | Broadcast `FF:FF:FF:FF:FF`  |
+| 5     | Réponse ARP | x         | `router` `08:00:27:04:92:22` | x              | `marcel` `08:00:27:83:69:12`|
+| 6     | Ping        | 10.2.2.254| `router` `08:00:27:04:92:22` | 10.2.2.12      | `marcel` `08:00:27:83:69:12`|
+| 7     | Pong        | 10.2.2.12 | `marcel` `08:00:27:83:69:12` | 10.2.2.254     | `router` `08:00:27:04:92:22`|
+| 8     | Pong        | 10.2.2.12 | `router` `08:00:27:0a:50:bb` | 10.2.1.11      | `node1` `08:00:27:71:b4:d6` |
 
 # 3. Accès Internet
 
