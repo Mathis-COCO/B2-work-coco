@@ -824,7 +824,7 @@ Pour trouver ce résultat, il aurait fallu que je lance tcpdump sur la machine n
 
 
 📁 **Captures réseau : **
- `tp3_ssh.pcap`
+ [**tp3_ssh.pcap**](/pcap _files/tp3_ssh.pcap)
  `tp3_http.pcap`
  `tp3_dns.pcap`
  `tp3_nfs.pcap`
@@ -839,17 +839,21 @@ Pour trouver ce résultat, il aurait fallu que je lance tcpdump sur la machine n
 
 🌞 **Bah j'veux un schéma.**
 
-- réalisé avec l'outil de votre choix
-- un schéma clair qui représente
-  - les réseaux
-    - les adresses de réseau devront être visibles
-  - toutes les machines, avec leurs noms
-  - devront figurer les IPs de toutes les interfaces réseau du schéma
-  - pour les serveurs : une indication de quel port est ouvert
-- vous représenterez les host-only comme des switches
+- réalisé avec drawio
+
+![](img/diagram_reseau.png)
+
 - dans le rendu, mettez moi ici à la fin :
-  - le schéma
   - le 🗃️ tableau des réseaux 🗃️
+
+    | Nom du réseau | Adresse du réseau | Masque            | Nombre de clients possibles | Adresse passerelle | Adresse broadcast    |
+    |---------------|-------------------|-------------------|-----------------------------|-------------------------------------------|
+    | `client1`     | `10.3.0.129`      | `255.255.255.192` | `62`                        | `10.3.0.190`       |   `10.3.0.191`       |
+    | `server1`     | `10.3.0.1`        | `255.255.255.128` | `126`                       | `10.3.0.126`       |   `10.3.0.127`       |
+    | `server2`     | `10.3.0.193`      | `255.255.255.240` | `14`                        | `10.3.0.205`       |   `10.3.0.207`       |
+
+  - le 🗃️ tableau d'adressage 🗃️
+
     | Nom machine         | Adresse de la machine dans le réseau `client1` | Adresse dans `server1` | Adresse dans `server2` | Adresse de passerelle  |
     |---------------------|------------------------------------------------|------------------------|------------------------|------------------------|
     | `router.tp3`        | `10.3.0.190/26`                                | `10.3.0.126/25`        | `10.3.0.206/28`        | Carte NAT              |
@@ -860,10 +864,7 @@ Pour trouver ce résultat, il aurait fallu que je lance tcpdump sur la machine n
     | `web1.server2.tp3`  |                                                |                        | `10.3.0.195/28`        | `router 10.3.0.206/28` |
     | `nfs1.server2.tp3`  |                                                |                        | `10.3.0.196/28`        | `router 10.3.0.206/28` |
 
-  - le 🗃️ tableau d'adressage 🗃️
     - on appelle ça aussi un "plan d'adressage IP" :)
-
-> J'vous le dis direct, un schéma moche avec Paint c'est -5 Points. Je vous recommande [draw.io](http://draw.io).
 
 🌞 **Et j'veux des fichiers aussi, tous les fichiers de conf du DNS**
 
