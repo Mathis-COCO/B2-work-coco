@@ -336,22 +336,79 @@ Pour la sauvegarde, il existe plusieurs façon de procéder. Pour notre part, no
     /srv/backup/web.tp2.linux 10.102.1.11/24(rw,no_root_squash)
     ```
     ```
-    [mathis@backup ~]$ sudo systemctl enable --now rpcbind nfs-server
+    [mathis@backup ~]$ sudo systemctl start nfs-server.service
+    [mathis@backup ~]$ sudo systemctl enable nfs-server.service
     Created symlink /etc/systemd/system/multi-user.target.wants/nfs-server.service → /usr/lib/systemd/system/nfs-server.service.
     [mathis@backup ~]$ sudo firewall-cmd --add-service=nfs
     success
+    [mathis@backup ~]$ sudo firewall-cmd --add-service={nfs3,mountd,rpc-bind} --permanent
     [mathis@backup ~]$ sudo firewall-cmd --runtime-to-permanent
     success
+    [mathis@backup ~]$ sudo firewall-cmd --reload
     ```
 🌞 **Setup points de montage sur `web.tp2.linux`**
 
-- [sur le même site, y'a ça](https://www.server-world.info/en/note?os=Rocky_Linux_8&p=nfs&f=2)
 - monter le dossier `/srv/backups/web.tp2.linux` du serveur NFS dans le dossier `/srv/backup/` du serveur Web
+  ```
+  [mathis@backup ~]$ sudo mkdir /srv/backups
+  ```
 - vérifier...
   - avec une commande `mount` que la partition est bien montée
+    ```
+    [mathis@web ~]$ sudo mount /srv/backup/ -v
+    mount.nfs: timeout set for Mon Oct 25 22:20:39 2021
+    mount.nfs: trying text-based options 'vers=4.2,addr=10.102.1.13,clientaddr=10.102.1.11'
+    ```
   - avec une commande `df -h` qu'il reste de la place
+    ```
+    [mathis@web ~]$ df -h | grep backup
+    backup.tp2.linux:/srv/backup/web.tp2.linux  6.2G  2.4G  3.9G  38% /srv/backup
+    ```
   - avec une commande `touch` que vous avez le droit d'écrire dans cette partition
+    ```
+    [mathis@web ~]$ touch /srv/backup/test_de_fou_furieux
+    ```
+    ```
+    [mathis@backup backup]$ ls /srv/backup/web.tp2.linux/
+    test_de_fou_furieux
+    ```
 - faites en sorte que cette partition se monte automatiquement grâce au fichier `/etc/fstab`
+  ```
+  [mathis@web ~]$ cat /etc/fstab
+
+  #
+  # /etc/fstab
+  # Created by anaconda on Sun Oct 10 13:19:46 2021
+  #
+  # Accessible filesystems, by reference, are maintained under '/dev/disk/'.
+  # See man pages fstab(5), findfs(8), mount(8) and/or blkid(8) for more info.
+  #
+  # After editing this file, run 'systemctl daemon-reload' to update systemd
+  # units generated from this file.
+  #
+  /dev/mapper/rl-root     /                       xfs     defaults        0 0
+  UUID=e1670393-b397-447c-9e2b-a04e8566ccb2 /boot                   xfs     defaults        0 0
+  /dev/mapper/rl-swap     none                    swap    defaults        0 0
+  backup.tp2.linux:/srv/backup/web.tp2.linux /srv/backup    nfs     defaults        0 0
+  ```
+  ```
+  [mathis@db ~]$ sudo systemctl start nfs-server.service
+  [mathis@db ~]$ sudo systemctl enable nfs-server.service
+  Created symlink /etc/systemd/system/multi-user.target.wants/nfs-server.service → /usr/lib/systemd/system/nfs-server.service.
+  [mathis@db ~]$ sudo mkdir /srv/backup
+  [mathis@db ~]$ sudo nano /etc/fstab
+  [mathis@db ~]$ sudo nano /etc/hosts
+  [mathis@db ~]$ sudo mount /srv/backup/
+  ```
+  On teste donc pour db.tp2.linux:
+  ```
+  [mathis@db ~]$ sudo touch /srv/backup/test_de_malade_2
+  ```
+  ```
+  [mathis@backup backup]$ ls /srv/backup/db.tp2.linux/
+  test_de_malade_2
+  ```
+
 
 🌟 **BONUS** : partitionnement avec LVM
 
@@ -361,26 +418,6 @@ Pour la sauvegarde, il existe plusieurs façon de procéder. Pour notre part, no
 - cette nouvelle partition devra être montée sur le dossier `/srv/backup/`
 
 ## 3. Backup de fichiers
-
-**Un peu de scripting `bash` !** Le scripting est le meilleur ami de l'admin, vous allez pas y couper hihi.  
-
-La syntaxe de `bash` est TRES particulière, mais ce que je vous demande de réaliser là est un script minimaliste.
-
-Votre script **DEVRA**...
-
-- comporter un shebang
-- comporter un commentaire en en-tête qui indique le but du script, en quelques mots
-- comporter un commentaire qui indique l'auteur et la date d'écriture du script
-
-Par exemple :
-
-```bash
-#!/bin/bash
-# Simple backup script
-# it4 - 09/10/2021
-
-...
-```
 
 🌞 **Rédiger le script de backup `/srv/tp2_backup.sh`**
 
@@ -392,14 +429,7 @@ Par exemple :
 - le script utilise la commande `rsync` afin d'envoyer la sauvegarde dans le dossier de destination
 - il **DOIT** pouvoir être appelé de la sorte :
 
-```bash
-$ ./tp2_backup.sh <DESTINATION> <DOSSIER_A_BACKUP>
-```
-
 📁 **Fichier `/srv/tp2_backup.sh`**
-
-> **Il est strictement hors de question d'utiliser `sudo` dans le contenu d'un script.**  
-Il est envisageable, en revanche, que le script doive être lancé avec root ou la commande `sudo` afin d'obtenir des droits élevés pendant son exécution.
 
 🌞 **Tester le bon fonctionnement**
 
@@ -407,6 +437,22 @@ Il est envisageable, en revanche, que le script doive être lancé avec root ou 
 - prouvez que la backup s'est bien exécutée
 - **tester de restaurer les données**
   - récupérer l'archive générée, et vérifier son contenu
+  ```
+  [mathis@backup ~]$ sudo nano /srv/tp2_backup.sh
+  [mathis@backup srv]$ sudo  mkdir  /srv/backup_test
+  [mathis@backup srv]$ sudo mkdir -p test/test_de_fou
+  [mathis@backup srv]$ sudo ./tp2_backup.sh backup_test/ test/
+  [OK] Archive /srv/tp2_backup_211025_231447.tar.gz created.
+  [OK] Archive /srv/tp2_backup_211025_231447.tar.gz synchronized to backup_test/.
+  [OK] Directory backup_test/ cleaned to keep only the 5 most recent backups.
+  [mathis@backup backup_test]$ cat tp2_backup_211025_231447.tar.gz
+  Gwa��1
+  �0
+    ���70�F�#��4�_��8t�oH
+  �b�B��{���cXs�������+��
+                          �<,y�q
+                                ��OB���-=��([mathis@backup backup_test]$
+  ```
 
 🌟 **BONUS**
 
@@ -440,55 +486,75 @@ Ensuite on créera un *timer systemd* qui permettra de déclencher le lancement 
 - c'est juste un fichier texte hein
 - doit se trouver dans le dossier `/etc/systemd/system/`
 - doit s'appeler `tp2_backup.service`
-- le contenu :
+  ```
+  [mathis@web ~]$ cat /etc/systemd/system/tp2_backup.service
+  [Unit]
+  Description=Our own lil backup service (TP2)
 
-```bash
-[Unit]
-Description=Our own lil backup service (TP2)
+  [Service]
+  ExecStart=/srv/tp2_backup.sh /srv/backup /var/www/html
+  Type=oneshot
+  RemainAfterExit=no
 
-[Service]
-ExecStart=/srv/tp2_backup.sh <DESTINATION> <DOSSIER>
-Type=oneshot
-RemainAfterExit=no
-
-[Install]
-WantedBy=multi-user.target
-```
-
-> Pour les tests, sauvegardez le dossier de votre choix, peu importe lequel.
+  [Install]
+  WantedBy=multi-user.target
+  ```
 
 🌞 **Tester le bon fonctionnement**
 
 - n'oubliez pas d'exécuter `sudo systemctl daemon-reload` à chaque ajout/modification d'un *service*
 - essayez d'effectuer une sauvegarde avec `sudo systemctl start backup`
+  ```
+  [mathis@web ~]$ sudo systemctl daemon-reload
+  [mathis@web ~]$ sudo systemctl enable tp2_backup.service
+  [mathis@web ~]$ sudo systemctl start tp2_backup.service
+  ```
 - prouvez que la backup s'est bien exécutée
+  ```
+  [mathis@web ~]$ sudo systemctl status tp2_backup.service
+  ● tp2_backup.service - Our own lil backup service (TP2)
+   Loaded: loaded (/etc/systemd/system/tp2_backup.service; enabled; vendor preset: disabled)
+   Active: inactive (dead) since Mon 2021-10-25 23:45:16 CEST; 1s ago
+  Process: 4093 ExecStart=/srv/tp2_backup.sh /srv/backup /var/www/html (code=exited, status=0/SUCCESS)
+  Main PID: 4093 (code=exited, status=0/SUCCESS)
+
+  Oct 25 23:45:16 web.tp2.linux systemd[1]: Starting Our own lil backup service (TP2)...
+  Oct 25 23:45:16 web.tp2.linux tp2_backup.sh[4093]: [OK] Archive //tp2_backup_211025_234516.tar.gz created.
+  Oct 25 23:45:16 web.tp2.linux tp2_backup.sh[4093]: [OK] Archive //tp2_backup_211025_234516.tar.gz synchronized to /srv/backup.
+  Oct 25 23:45:16 web.tp2.linux tp2_backup.sh[4093]: [OK] Directory /srv/backup cleaned to keep only the 5 most recent backups
+  Oct 25 23:45:16 web.tp2.linux systemd[1]: tp2_backup.service: Succeeded.
+  Oct 25 23:45:16 web.tp2.linux systemd[1]: Started Our own lil backup service (TP2).
+  ```
   - vérifiez la présence de la nouvelle archive
+    ```
+    [mathis@web ~]$ ls /srv/backup/
+    test_de_fou_furieux  tp2_backup_211025_234453.tar.gz  tp2_backup_211025_234514.tar.gz  tp2_backup_211025_234516.tar.gz
+    ```
 
 ---
 
 ### B. Timer
-
-Un *timer systemd* permet l'exécution d'un *service* à intervalles réguliers.
 
 🌞 **Créer le *timer* associé à notre `tp2_backup.service`**
 
 - toujours juste un fichier texte
 - dans le dossier `/etc/systemd/system/` aussi
 - fichier `tp2_backup.timer`
-- contenu du fichier :
+- contenu du fichier : 
+  ```
+  [mathis@web ~]$ sudo nano /etc/systemd/system/tp2_backup.timer
+  [mathis@web ~]$ cat /etc/systemd/system/tp2_backup.timer
+  [Unit]
+  Description=Periodically run our TP2 backup script
+  Requires=tp2_backup.service
 
-```bash
-[Unit]
-Description=Periodically run our TP2 backup script
-Requires=tp2_backup.service
+  [Timer]
+  Unit=tp2_backup.service
+  OnCalendar=*-*-* *:*:00
 
-[Timer]
-Unit=tp2_backup.service
-OnCalendar=*-*-* *:*:00
-
-[Install]
-WantedBy=timers.target
-```
+  [Install]
+  WantedBy=timers.target
+  ```
 
 > Le nom du *timer* doit être rigoureusement identique à celui du *service*. Seule l'extension change : de `.service` à `.timer`. C'est notamment grâce au nom identique que systemd sait que ce *timer* correspond à un *service* précis.
 
@@ -496,14 +562,49 @@ WantedBy=timers.target
 
 - démarrer le *timer* : `sudo systemctl start tp2_backup.timer`
 - activer le au démarrage avec une autre commande `systemctl`
+  ```
+  [mathis@web ~]$ sudo systemctl start tp2_backup.timer
+  [sudo] password for mathis:
+  [mathis@web ~]$ sudo systemctl enable tp2_backup.timer
+  Created symlink /etc/systemd/system/timers.target.wants/tp2_backup.timer → /etc/systemd/system/tp2_backup.timer.
+  ```
 - prouver que...
   - le *timer* est actif actuellement
   - qu'il est paramétré pour être actif dès que le système boot
+  ```
+  [mathis@web ~]$ sudo systemctl status tp2_backup.timer
+  ● tp2_backup.timer - Periodically run our TP2 backup script
+    Loaded: loaded (/etc/systemd/system/tp2_backup.timer; enabled; vendor preset: disabled)
+    Active: active (waiting) since Tue 2021-10-26 00:01:09 CEST; 3min 39s ago
+    Trigger: Tue 2021-10-26 00:05:00 CEST; 10s left
+
+  Oct 26 00:01:09 web.tp2.linux systemd[1]: Started Periodically run our TP2 backup script.
+  ```
+  autre façon moins détaillée:
+  ```
+  [mathis@web ~]$ sudo systemctl is-enabled tp2_backup.timer
+  enabled
+  [mathis@web ~]$ sudo systemctl is-active tp2_backup.timer
+  active
+  ```
 
 🌞 **Tests !**
 
 - avec la ligne `OnCalendar=*-*-* *:*:00`, le *timer* déclenche l'exécution du *service* toutes les minutes
 - vérifiez que la backup s'exécute correctement
+  ```
+  [mathis@web srv]$ date
+  Tue Oct 26 00:09:33 CEST 2021
+  [mathis@web srv]$ ls /srv/backup
+  tp2_backup_211026_000502.tar.gz  tp2_backup_211026_000602.tar.gz  tp2_backup_211026_000702.tar.gz  tp2_backup_211026_000802.tar.gz  tp2_backup_211026_000902.tar.gz
+  ```
+  1 min plus tard environ:
+  ```
+  [mathis@web srv]$ date
+  Tue Oct 26 00:10:12 CEST 2021
+  [mathis@web srv]$ ls /srv/backup
+  tp2_backup_211026_000602.tar.gz  tp2_backup_211026_000702.tar.gz  tp2_backup_211026_000802.tar.gz  tp2_backup_211026_000902.tar.gz  tp2_backup_211026_001002.tar.gz
+  ```
 
 ---
 
@@ -514,8 +615,28 @@ WantedBy=timers.target
 - votre backup s'exécute sur la machine `web.tp2.linux`
 - le dossier sauvegardé est celui qui contient le site NextCloud (quelque part dans `/var/`)
 - la destination est le dossier NFS monté depuis le serveur `backup.tp2.linux`
+  ```
+  [mathis@web srv]$ cat /etc/systemd/system/tp2_backup.service | grep Exec
+  ExecStart=/srv/tp2_backup.sh /srv/backup /var/www/html
+  ```
 - la sauvegarde s'exécute tous les jours à 03h15 du matin
+  ```
+  [mathis@web srv]$ cat /etc/systemd/system/tp2_backup.timer | grep OnCalendar
+  OnCalendar=*-*-* 3:15:00
+  ```
 - prouvez avec la commande `sudo systemctl list-timers` que votre *service* va bien s'exécuter la prochaine fois qu'il sera 03h15
+vu qu'on vient de modifier la config du service, on doit reload le daemon
+  ```
+  [mathis@web srv]$ sudo systemctl daemon-reload
+  [mathis@web srv]$ sudo systemctl list-timers
+  NEXT                          LEFT          LAST                          PASSED       UNIT                         ACTIVATES
+  Tue 2021-10-26 03:15:00 CEST  2h 56min left n/a                           n/a          tp2_backup.timer             tp2_backup.service
+  Tue 2021-10-26 19:58:50 CEST  19h left      Mon 2021-10-25 19:58:50 CEST  4h 19min ago systemd-tmpfiles-clean.timer systemd-tmpfiles-clean.service
+  n/a                           n/a           Tue 2021-10-26 00:17:46 CEST  16s ago      dnf-makecache.timer          dnf-makecache.service
+
+  3 timers listed.
+  Pass --all to see loaded but inactive timers, too.
+  ```
 
 📁 **Fichier `/etc/systemd/system/tp2_backup.timer`**  
 📁 **Fichier `/etc/systemd/system/tp2_backup.service`**
@@ -555,48 +676,9 @@ $ ./tp2_backup_db.sh <DESTINATION> <DATABASE>
 
 ## 6. Petit point sur la backup
 
-A ce stade vous avez :
-
-- un script qui tourne sur `web.tp2.linux` et qui **sauvegarde les fichiers de NextCloud**
-- un script qui tourne sur `db.tp2.linux` et qui **sauvegarde la base de données de NextCloud**
-- toutes **les backups sont centralisées** sur `backup.tp2.linux`
-- **tout est géré de façon automatisée**
-  - les scripts sont packagés dans des *services*
-  - les services sont déclenchés par des *timers*
-  - tout est paramétré pour s'allumer quand les machines boot (les *timers* comme le serveur NFS)
-
-🔥🔥 **That is clean shit.** 🔥🔥
-
 # III. Reverse Proxy
 
 ## 1. Introooooo
-
-Un *reverse proxy* est un outil qui sert d'intermédiaire entre le client et un serveur donné (souvent un serveur Web).
-
-**C'est l'admin qui le met en place, afin de protéger l'accès au serveur Web.**
-
-Une fois en place, le client devra saisir l'IP (ou le nom) du *reverse proxy* pour accéder à l'application Web (ce ne sera plus directement l'IP du serveur Web).
-
-Un *reverse proxy* peut permettre plusieurs choses :
-
-- chiffrement
-  - c'est lui qui mettra le HTTPS en place (protocole HTTP + chiffrement avec le protocole TLS)
-  - on pourrait le faire directement avec le serveur Web (Apache) dans notre cas
-  - pour de meilleures performances, il est préférable de dédier une machine au chiffrement HTTPS, et de laisser au serveur web un unique job : traiter les requêtes HTTP
-- répartition de charge
-  - plutôt qu'avoir un seul serveur Web, on peut en setup plusieurs
-  - ils hébergent tous la même application
-  - le *reverse proxy* enverra les clients sur l'un ou l'autre des serveurs Web, afin de répartir la charge à traiter
-- d'autres trucs
-  - caching de ressources statiques (CSS, JSS, images, etc.)
-  - tolérance de pannes
-  - ...
-
----
-
-**Dans ce TP on va setup un reverse proxy NGINX très simpliste.**
-
-![Apache at the back hihi](./pics/nginx-at-the-front-apache-at-the-back.jpg)
 
 ## 2. Setup simple
 
