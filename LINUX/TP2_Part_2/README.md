@@ -429,7 +429,7 @@ Pour la sauvegarde, il existe plusieurs façon de procéder. Pour notre part, no
 - le script utilise la commande `rsync` afin d'envoyer la sauvegarde dans le dossier de destination
 - il **DOIT** pouvoir être appelé de la sorte :
 
-📁 **Fichier `/srv/tp2_backup.sh`**
+[📁 **Fichier `/srv/tp2_backup.sh`**](\scripts\tp2_backup.sh)
 
 🌞 **Tester le bon fonctionnement**
 
@@ -638,8 +638,9 @@ vu qu'on vient de modifier la config du service, on doit reload le daemon
   Pass --all to see loaded but inactive timers, too.
   ```
 
-📁 **Fichier `/etc/systemd/system/tp2_backup.timer`**  
-📁 **Fichier `/etc/systemd/system/tp2_backup.service`**
+[📁 **Fichier `/etc/systemd/system/tp2_backup.timer`**](\scripts\tp2_backup.timer)
+
+[📁 **Fichier `/etc/systemd/system/tp2_backup.service`**](\scripts\tp2_backup.service)
 
 ## 5. Backup de base de données
 
@@ -691,39 +692,157 @@ $ ./tp2_backup_db.sh <DESTINATION> <DATABASE>
 
 🖥️ **VM `front.tp2.linu`x**
 
-**Déroulez la [📝**checklist**📝](#checklist) sur cette VM.**
-
 🌞 **Installer NGINX**
 
 - vous devrez d'abord installer le paquet `epel-release` avant d'installer `nginx`
   - EPEL c'est des dépôts additionnels pour Rocky
   - NGINX n'est pas présent dans les dépôts par défaut que connaît Rocky
+    ```
+    [mathis@front ~]$ sudo dnf install -y epel-release
+    Extra Packages for Enterprise Linux Modular 8 - x86_64                                                                                 61 kB/s | 955 kB     00:15
+    Extra Packages for Enterprise Linux 8 - x86_64                                                                                        672 kB/s |  10 MB     00:15
+    Last metadata expiration check: 0:00:01 ago on Tue 26 Oct 2021 12:39:03 AM CEST.
+    Package epel-release-8-13.el8.noarch is already installed.
+    Dependencies resolved.
+    Nothing to do.
+    Complete!
+    [mathis@front ~]$ sudo dnf install -y nginx
+    Last metadata expiration check: 0:00:16 ago on Tue 26 Oct 2021 12:39:03 AM CEST.
+    Dependencies resolved.
+    [...]
+    Complete!
+    ```
 - le fichier de conf principal de NGINX est `/etc/nginx/nginx.conf`
+  ```
+  [mathis@front ~]$ cat /etc/nginx/nginx.conf
+  # For more information on configuration, see:
+  #   * Official English Documentation: http://nginx.org/en/docs/
+  #   * Official Russian Documentation: http://nginx.org/ru/docs/
+
+  user nginx;
+  worker_processes auto;
+  error_log /var/log/nginx/error.log;
+  pid /run/nginx.pid;
+
+  [...]
+  #        error_page 500 502 503 504 /50x.html;
+  #            location = /50x.html {
+  #        }
+  #    }
+
+  }
+  ```
 
 🌞 **Tester !**
 
 - lancer le *service* `nginx`
+  ```
+  [mathis@front ~]$ sudo systemctl start nginx
+  ```
 - le paramétrer pour qu'il démarre seul quand le système boot
+  ```
+  [mathis@front ~]$ sudo systemctl enable nginx
+  Created symlink /etc/systemd/system/multi-user.target.wants/nginx.service → /usr/lib/systemd/system/nginx.service.
+  ```
 - repérer le port qu'utilise NGINX par défaut, pour l'ouvrir dans le firewall
+  ```
+  [mathis@front ~]$ cat /etc/nginx/nginx.conf | grep listen
+  listen       80 default_server;
+  listen       [::]:80 default_server;
+  [mathis@front ~]$ sudo firewall-cmd --add-port=80/tcp
+  success
+  [mathis@front ~]$ sudo firewall-cmd --add-port=80/tcp --permanent
+  success
+  [mathis@front ~]$ sudo firewall-cmd --list-all | grep ports
+  ports: 22/tcp 80/tcp
+  ```
 - vérifier que vous pouvez joindre NGINX avec une commande `curl` depuis votre PC
+  ```
+  PS C:\Users\Mathis> curl 10.102.1.14
+
+
+  StatusCode        : 200
+  StatusDescription : OK
+  Content           : <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+
+                      <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+                        <head>
+                          <title>Test Page for the Nginx...
+  RawContent        : HTTP/1.1 200 OK
+                      Connection: keep-alive
+                      Accept-Ranges: bytes
+                      Content-Length: 3429
+                      Content-Type: text/html
+                      Date: Mon, 25 Oct 2021 22:46:33 GMT
+                      ETag: "60c1d6af-d65"
+                      Last-Modified: Thu, 10 Jun 2021...
+  Forms             : {}
+  Headers           : {[Connection, keep-alive], [Accept-Ranges, bytes], [Content-Length, 3429], [Content-Type, text/html]...}
+  Images            : {@{innerHTML=; innerText=; outerHTML=<IMG alt="[ Powered by nginx ]" src="nginx-logo.png" width=121 height=32>; outerText=; tagName=IMG; alt=[
+                      Powered by nginx ]; src=nginx-logo.png; width=121; height=32}, @{innerHTML=; innerText=; outerHTML=<IMG alt="[ Powered by Rocky Linux ]"
+                      src="poweredby.png" width=88 height=31>; outerText=; tagName=IMG; alt=[ Powered by Rocky Linux ]; src=poweredby.png; width=88; height=31}}
+  InputFields       : {}
+  Links             : {@{innerHTML=Rocky Linux website; innerText=Rocky Linux website; outerHTML=<A href="https://www.rockylinux.org/">Rocky Linux website</A>;
+                      outerText=Rocky Linux website; tagName=A; href=https://www.rockylinux.org/}, @{innerHTML=available on the Rocky Linux website;
+                      innerText=available on the Rocky Linux website; outerHTML=<A href="https://www.rockylinux.org/">available on the Rocky Linux website</A>;
+                      outerText=available on the Rocky Linux website; tagName=A; href=https://www.rockylinux.org/}, @{innerHTML=<IMG alt="[ Powered by nginx ]"
+                      src="nginx-logo.png" width=121 height=32>; innerText=; outerHTML=<A href="http://nginx.net/"><IMG alt="[ Powered by nginx ]"
+                      src="nginx-logo.png" width=121 height=32></A>; outerText=; tagName=A; href=http://nginx.net/}, @{innerHTML=<IMG alt="[ Powered by Rocky Linux ]"
+                      src="poweredby.png" width=88 height=31>; innerText=; outerHTML=<A href="http://www.rockylinux.org/"><IMG alt="[ Powered by Rocky Linux ]"
+                      src="poweredby.png" width=88 height=31></A>; outerText=; tagName=A; href=http://www.rockylinux.org/}}
+  ParsedHtml        : mshtml.HTMLDocumentClass
+  RawContentLength  : 3429
+  ```
 
 🌞 **Explorer la conf par défaut de NGINX**
 
 - repérez l'utilisateur qu'utilise NGINX par défaut
+  ```
+  [mathis@front ~]$ cat /etc/nginx/nginx.conf | grep user
+  user nginx;
+  ```
 - dans la conf NGINX, on utilise le mot-clé `server` pour ajouter un nouveau site
   - repérez le bloc `server {}` dans le fichier de conf principal
+    ```
+    [mathis@front ~]$ cat /etc/nginx/nginx.conf
+    [...]
+    server {
+        listen       80 default_server;
+        listen       [::]:80 default_server;
+        server_name  _;
+        root         /usr/share/nginx/html;
+
+        # Load configuration files for the default server block.
+        include /etc/nginx/default.d/*.conf;
+
+        location / {
+        }
+    ```
 - par défaut, le fichier de conf principal inclut d'autres fichiers de conf
   - mettez en évidence ces lignes d'inclusion dans le fichier de conf principal
+      ```
+      [mathis@front ~]$ cat /etc/nginx/nginx.conf
+      [...]
+      server {
+          [...]
+          # Load configuration files for the default server block.
+          include /etc/nginx/default.d/*.conf;
+          [...]
+          }
+      ```
 
 🌞 **Modifier la conf de NGINX**
 
-- pour que ça fonctionne, le fichier `/etc/hosts` de la machine **DOIT** être rempli correctement, conformément à la **[📝**checklist**📝](#checklist)**
+- pour que ça fonctionne, le fichier `/etc/hosts` de la machine **DOIT** être rempli correctement
+  ```
+  [mathis@front ~]$ cat /etc/hosts | grep web
+  10.102.1.11 web web.tp2.linux
+  ```
 - supprimer le bloc `server {}` par défaut, pour ne plus présenter la page d'accueil NGINX
 - créer un fichier `/etc/nginx/conf.d/web.tp2.linux.conf` avec le contenu suivant :
-  - j'ai sur-commenté pour vous expliquer les lignes, n'hésitez pas à dégommer mes lignes de commentaires
 
 ```bash
-[it4@localhost nginx]$ cat conf.d/web.tp2.linux.conf 
+[mathis@web srv]$ cat /etc/nginx/conf.d/web.tp2.linux.conf
 server {
     # on demande à NGINX d'écouter sur le port 80 pour notre NextCloud
     listen 80;
@@ -792,52 +911,7 @@ $ sudo chmod 644 /etc/pki/tls/certs/web.tp2.linux.crt
 
 # IV. Firewalling
 
-**On va rendre nos firewalls un peu plus agressifs.**
-
-Actuellement je vous ai juste demandé d'autoriser le trafic sur tel ou tel port. C'est bien.
-
-**Maintenant on va restreindre le trafic niveau IP aussi.**
-
-Par exemple : notre base de données `db.tp2.linux` n'est accédée que par le serveur Web `web.tp2.linux`, et par aucune autre machine.  
-On va donc configurer le firewall de la base de données pour qu'elle n'accepte QUE le trafic qui vient du serveur Web.
-
-**On va *harden* ("durcir" en français) la configuration de nos firewalls.**
-
 ## 1. Présentation de la syntaxe
-
-> **N'oubliez pas d'ajouter `--permanent` sur toutes les commandes `firewall-cmd`** si vous souhaitez que le changement reste effectif après un rechargement de FirewallD.
-
-**Première étape** : définir comme politique par défaut de TOUT DROP. On refuse tout, et on whiteliste après.
-
-Il existe déjà une zone appelée `drop` qui permet de jeter tous les paquets. Il suffit d'ajouter nos interfaces dans cette zone.
-
-```bash
-$ sudo firewall-cmd --list-all # on voit qu'on est par défaut dans la zone "public"
-$ sudo firewall-cmd --set-default-zone=drop # on configure la zone "drop" comme zone par défaut
-$ sudo firewall-cmd --zone=drop --add-interface=enp0s8 # ajout explicite de l'interface host-only à la zone "drop"
-```
-
-**Ensuite**, on peut créer une nouvelle zone, qui autorisera le trafic lié à telle ou telle IP source :
-
-```bash
-$ sudo firewall-cmd --add-zone=ssh # le nom "ssh" est complètement arbitraire. C'est clean de faire une zone par service.
-```
-
-**Puis** on définit les règles visant à autoriser un trafic donné :
-
-```bash
-$ sudo firewall-cmd --zone=ssh --add-source=10.102.1.1/32 # 10.102.1.1 sera l'IP autorisée
-$ sudo firewall-cmd --zone=ssh --add-port=22/tcp # uniquement le trafic qui vient 10.102.1.1, à destination du port 22/tcp, sera autorisé
-```
-
-**Le comportement de FirewallD sera alors le suivant :**
-
-- si l'IP source d'un paquet est `10.102.1.1`, il traitera le paquet comme étant dans la zone `ssh`
-- si l'IP source est une autre IP, et que le paquet arrive par l'interface `enp0s8` alors le paquet sera géré par la zone `drop` (le paquet sera donc *dropped* et ne sera jamais traité)
-
-> *L'utilisation de la notation `IP/32` permet de cibler une IP spécifique. Si on met le vrai masque `10.102.1.1/24` par exemple, on autorise TOUT le réseau `10.102.1.0/24`, et non pas un seul hôte. Ce `/32` c'est un truc qu'on voit souvent en réseau, pour faire référence à une IP unique.*
-
-![Cut here to activate firewall :D](./pics/cut-here-to-activate-firewall-best-label-for-lan-cable.jpg)
 
 ## 2. Mise en place
 
@@ -848,15 +922,77 @@ $ sudo firewall-cmd --zone=ssh --add-port=22/tcp # uniquement le trafic qui vien
 - seul le serveur Web doit pouvoir joindre la base de données sur le port 3306/tcp
 - vous devez aussi autoriser votre accès SSH
 - n'hésitez pas à multiplier les zones (une zone `ssh` et une zone `db` par exemple)
-
-> Quand vous faites une connexion SSH, vous la faites sur l'interface Host-Only des VMs. Cette interface est branchée à un Switch qui porte le nom du Host-Only. Pour rappel, votre PC a aussi une interface branchée à ce Switch Host-Only.  
-C'est depuis cette IP que la VM voit votre connexion. C'est cette IP que vous devez autoriser dans le firewall de votre VM pour SSH.
+  ```
+  [mathis@db ~]$ sudo firewall-cmd --set-default-zone=drop
+  success
+  [mathis@db ~]$ sudo firewall-cmd --zone=drop --add-interface=enp0s8
+  Warning: ZONE_ALREADY_SET: 'enp0s8' already bound to 'drop'
+  success
+  [mathis@db ~]$ sudo firewall-cmd --zone=drop --add-interface=enp0s8 --permanent
+  The interface is under control of NetworkManager, setting zone to 'drop'.
+  success
+  [mathis@db ~]$ sudo firewall-cmd --zone=web --add-source=10.102.1.11 --permanent
+  success
+  [mathis@db ~]$ sudo firewall-cmd --zone=web --add-port=3306/tcp --permanent
+  success
+  [mathis@db ~]$ sudo firewall-cmd --zone=ssh --add-source=192.168.1.14/24 --permanent
+  success
+  [mathis@db ~]$ sudo firewall-cmd --zone=ssh --add-port=22/tcp --permanent
+  success
+  [mathis@db ~]$ sudo firewall-cmd --reload
+  success
+  ```
 
 🌞 **Montrez le résultat de votre conf avec une ou plusieurs commandes `firewall-cmd`**
 
 - `sudo firewall-cmd --get-active-zones`
+  ```
+  [mathis@db ~]$ sudo firewall-cmd --get-active-zones
+  drop
+    interfaces: enp0s8 enp0s3
+  ssh
+    sources: 192.168.1.14/24
+  web
+    sources: 10.102.1.11
+  ```
 - `sudo firewall-cmd --get-default-zone`
+  ```
+  [mathis@db ~]$ sudo firewall-cmd --get-default-zone
+  drop
+  ```
 - `sudo firewall-cmd --list-all --zone=?`
+  ```
+  [mathis@db ~]$ sudo firewall-cmd --list-all --zone=web
+  web (active)
+  target: default
+  icmp-block-inversion: no
+  interfaces:
+  sources: 10.102.1.11
+  services:
+  ports: 3306/tcp
+  protocols:
+  masquerade: no
+  forward-ports:
+  source-ports:
+  icmp-blocks:
+  rich rules:
+  ```
+  ```
+  [mathis@db ~]$ sudo firewall-cmd --list-all --zone=ssh
+  ssh (active)
+  target: default
+  icmp-block-inversion: no
+  interfaces:
+  sources: 192.168.1.14/24
+  services:
+  ports: 22/tcp
+  protocols:
+  masquerade: no
+  forward-ports:
+  source-ports:
+  icmp-blocks:
+  rich rules:
+  ```
 
 ### B. Serveur Web
 
@@ -864,8 +1000,41 @@ C'est depuis cette IP que la VM voit votre connexion. C'est cette IP que vous de
 
 - seul le reverse proxy `front.tp2.linux` doit accéder au serveur web sur le port 80
 - n'oubliez pas votre accès SSH
-
+  ```
+  [mathis@web srv]$ sudo firewall-cmd --set-default-zone=drop
+  [sudo] password for mathis:
+  success
+  [mathis@web ~]$ sudo firewall-cmd --zone=drop --add-interface=enp0s8
+  Warning: ZONE_ALREADY_SET: 'enp0s8' already bound to 'drop'
+  success
+  [mathis@web ~]$ sudo firewall-cmd --zone=drop --add-interface=enp0s8 --permanent
+  The interface is under control of NetworkManager, setting zone to 'drop'.
+  success
+  [mathis@web ~]$ sudo firewall-cmd --new-zone=front --permanent
+  success
+  [mathis@web ~]$ sudo firewall-cmd --zone=front --add-source=10.102.1.14/24 --permanent
+  success
+  [mathis@web ~]$ sudo firewall-cmd --zone=front --add-port=80/tcp --permanent
+  success
+  [mathis@web ~]$ sudo firewall-cmd --new-zone=ssh --permanent
+  success
+  [mathis@web ~]$ sudo firewall-cmd --zone=ssh --add-source=192.168.1.14/24 --permanent
+  success
+  [mathis@web ~]$ sudo firewall-cmd --zone=ssh --add-port=22/tcp --permanent
+  success
+  [mathis@web ~]$ sudo firewall-cmd --reload
+  success
+  ```
 🌞 **Montrez le résultat de votre conf avec une ou plusieurs commandes `firewall-cmd`**
+  ```
+  [mathis@web ~]$ sudo firewall-cmd --get-active-zones
+  drop
+    interfaces: enp0s8 enp0s3
+  front
+    sources: 10.102.1.14/24
+  ssh
+    sources: 192.168.1.14/24
+  ```
 
 ### C. Serveur de backup
 
@@ -873,8 +1042,51 @@ C'est depuis cette IP que la VM voit votre connexion. C'est cette IP que vous de
 
 - seules les machines qui effectuent des backups doivent être autorisées à contacter le serveur de backup *via* NFS
 - n'oubliez pas votre accès SSH
+  ```
+  [mathis@backup backup_test]$ sudo firewall-cmd --set-default-zone=drop
+  [sudo] password for mathis:
+  success
+  [mathis@backup backup_test]$  sudo firewall-cmd --zone=drop --add-interface=enp0s8 --permanent
+  The interface is under control of NetworkManager, setting zone to 'drop'.
+  success
+  [mathis@backup backup_test]$ sudo firewall-cmd --new-zone=web --permanent
+  success
+  [mathis@backup backup_test]$ sudo firewall-cmd --new-zone=nfs --permanent
+  success
+  [mathis@backup backup_test]$ sudo firewall-cmd --zone=nfs --add-source=10.102.1.11/24 --permanent
+  success
+  [mathis@backup backup_test]$ sudo firewall-cmd --zone=nfs --add-source=10.102.1.12/24 --permanent
+  success
+  [mathis@backup backup_test]$ sudo firewall-cmd --zone=nfs --add-port=2049/tcp --permanent
+  success
+  [mathis@backup backup_test]$ sudo firewall-cmd --zone=nfs --add-port=111/tcp --permanent
+  success
+  [mathis@backup backup_test]$ sudo firewall-cmd --zone=nfs --add-port=111/udp --permanent
+  success
+  [mathis@backup backup_test]$ sudo firewall-cmd --zone=nfs --add-port=2049/udp --permanent
+  success
+  [mathis@backup backup_test]$ sudo firewall-cmd --new-zone=ssh --permanent
+  success
+  [mathis@backup backup_test]$ sudo firewall-cmd --zone=ssh --add-source=192.168.1.14/24 --permanent
+  success
+  [mathis@backup backup_test]$ sudo firewall-cmd --zone=ssh --add-port=22/tcp --permanent
+  success
+  [mathis@backup backup_test]$ sudo firewall-cmd --reload
+  success
+  ```
 
 🌞 **Montrez le résultat de votre conf avec une ou plusieurs commandes `firewall-cmd`**
+  ```
+  [mathis@backup backup_test]$ sudo firewall-cmd --get-active-zones
+  drop
+    interfaces: enp0s8
+  nfs
+    sources: 10.102.1.11/24 10.102.1.12/24
+  public
+    interfaces: enp0s3
+  ssh
+    sources: 192.168.1.14/24
+  ```
 
 ### D. Reverse Proxy
 
@@ -882,16 +1094,46 @@ C'est depuis cette IP que la VM voit votre connexion. C'est cette IP que vous de
 
 - seules les machines du réseau `10.102.1.0/24` doivent pouvoir joindre le proxy
 - n'oubliez pas votre accès SSH
-
+  ```
+  [mathis@front ~]$ sudo firewall-cmd --set-default-zone=drop
+  [sudo] password for mathis:
+  success
+  [mathis@front ~]$ sudo firewall-cmd --zone=drop --add-interface=enp0s8 --permanent
+  The interface is under control of NetworkManager, setting zone to 'drop'.
+  success
+  [mathis@front ~]$ sudo firewall-cmd --new-zone=res --permanent
+  success
+  [mathis@front ~]$ sudo firewall-cmd --zone=res --add-source=10.102.1.0/24 --permanent
+  success
+  [mathis@front ~]$ sudo firewall-cmd --zone=res --add-port=80/tcp --permanent
+  success
+  [mathis@front ~]$ sudo firewall-cmd --new-zone=ssh --permanent
+  success
+  [mathis@front ~]$ sudo firewall-cmd --zone=ssh --add-source=192.168.1.14/24 --permanent
+  success
+  [mathis@front ~]$ sudo firewall-cmd --zone=ssh --add-port=22/tcp --permanent
+  success
+  [mathis@front ~]$ sudo firewall-cmd --reload
+  success
+  ```
 🌞 **Montrez le résultat de votre conf avec une ou plusieurs commandes `firewall-cmd`**
+```
+[mathis@front ~]$ sudo firewall-cmd --get-active-zones
+drop
+  interfaces: enp0s8 enp0s3
+res
+  sources: 10.102.1.0/24
+ssh
+  sources: 192.168.1.14/24
+```
 
 ### E. Tableau récap
 
 🌞 **Rendez-moi le tableau suivant, correctement rempli :**
 
-| Machine            | IP            | Service                 | Port ouvert | IPs autorisées |
-|--------------------|---------------|-------------------------|-------------|---------------|
-| `web.tp2.linux`    | `10.102.1.11` | Serveur Web             | ?           | ?             |
-| `db.tp2.linux`     | `10.102.1.12` | Serveur Base de Données | ?           | ?             |
-| `backup.tp2.linux` | `10.102.1.13` | Serveur de Backup (NFS) | ?           | ?             |
-| `front.tp2.linux`  | `10.102.1.14` | Reverse Proxy           | ?           | ?  
+| Machine            | IP            | Service                 | Port ouvert                      | IPs autorisées            |
+|--------------------|---------------|-------------------------|----------------------------------|---------------------------|
+| `web.tp2.linux`    | `10.102.1.11` | Serveur Web             | 80/tcp 22/tcp                    | 10.102.1.14               |
+| `db.tp2.linux`     | `10.102.1.12` | Serveur Base de Données | 3306/tcp 22/tcp                  | 10.102.1.11               |
+| `backup.tp2.linux` | `10.102.1.13` | Serveur de Backup (NFS) | 2049/tcp,udp, 111/tcp,udp 22/tcp | 10.102.1.11 ; 10.102.1.12 |
+| `front.tp2.linux`  | `10.102.1.14` | Reverse Proxy           | 22/tcp                           | 10.102.1.0/24             |
